@@ -182,7 +182,7 @@ const generate_docs_step = (0, vNext_1.createStep)({
         let result = [];
         for (const file of inputData.files) {
             const docs = yield doc_generator_agent.generate(`Generate documentation for the following code: ${file.content}`);
-            result.push({ path: file.path, documentation: docs.toString() });
+            result.push({ path: file.path, documentation: docs.text.toString() });
         }
         return {
             docs: result
@@ -204,7 +204,7 @@ const generate_readme_step = (0, vNext_1.createStep)({
     execute: (_a) => __awaiter(void 0, [_a], void 0, function* ({ inputData, mastra, getStepResult, getInitData, runtimeContext, }) {
         const readme = yield doc_generator_agent.generate(`Generate a README.md file for the following documentation: ${inputData.docs.map(doc => doc.documentation).join("\n")}`);
         return {
-            readme: readme.toString()
+            readme: readme.text.toString()
         };
     })
 });
@@ -278,13 +278,21 @@ function runWorkflow() {
                 },
                 step: select_folder_step
             });
-            console.log('Resumed result:', resumedResult);
+            if (resumedResult.status === 'success') {
+                if ("readme" in resumedResult.result) {
+                    console.log(resumedResult.result.readme);
+                }
+                else {
+                    console.log(JSON.stringify(resumedResult, null, 2));
+                }
+            }
+            else {
+                console.log(JSON.stringify(resumedResult, null, 2));
+            }
         }
         else {
             console.log('Workflow result:', res);
         }
-        console.log("Result: ");
-        console.log(res);
     });
 }
 runWorkflow();
