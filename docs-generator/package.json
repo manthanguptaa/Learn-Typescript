@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "build": "tsc && node dist/index.js"
+    "build": "tsc && node dist/index.js",
+    "format": "prettier --write .",
+    "lint": "eslint . --ext .ts"
   },
   "keywords": [],
   "author": "",
@@ -12,6 +14,7 @@
   "dependencies": {
     "@ai-sdk/google": "^1.2.17",
     "@mastra/core": "^0.9.3",
+    "prettier": "^3.5.3",
     "simple-git": "^3.27.0"
   }
 }
