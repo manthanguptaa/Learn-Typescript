@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var util_1 = require("./util");
+console.log((0, util_1.add)(1, 2));
+console.log((0, util_1.sub)(1, 2));
+console.log((0, util_1.mul)(1, 2));
+console.log((0, util_1.default)());
+var util_2 = require("./math/complex/util");
+var util_3 = require("./math/simple/util");
+console.log((0, util_2.default)());
+console.log((0, util_3.default)());
+console.log((0, util_2.simple)());
