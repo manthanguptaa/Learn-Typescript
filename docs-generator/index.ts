@@ -1,11 +1,14 @@
 import { createWorkflow, createStep } from "@mastra/core/workflows/vNext";
-import { Agent, Mastra } from "@mastra/core";
+import { createLogger, Mastra } from "@mastra/core";
+import { Agent } from "@mastra/core/agent";
 import { z } from "zod";
 import simpleGit from "simple-git";
 import fs from "fs";
 import path from "path";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import dotenv from "dotenv";
+import { promptUserForFolders } from "./utils";
+
 
 dotenv.config();
 
@@ -86,7 +89,7 @@ const cloneRepositoryStep = createStep({
 
 const selectFolderStep = createStep({
   id: "select_folder",
-  description: "Select the folder to generate the docs",
+  description: "Select the folder(s) to generate the docs",
   inputSchema: z.object({
     success: z.boolean(),
     message: z.string(),
@@ -94,9 +97,7 @@ const selectFolderStep = createStep({
       repoUrl: z.string(),
     }),
   }),
-  outputSchema: z.object({
-    selectedFolders: z.array(z.string()),
-  }),
+  outputSchema: z.array(z.string()), // <-- FIXED: flat array of file paths
   suspendSchema: z.object({
     folders: z.array(z.string()),
     message: z.string(),
@@ -104,7 +105,7 @@ const selectFolderStep = createStep({
   resumeSchema: z.object({
     selection: z.array(z.string()),
   }),
-  execute: async ({ inputData, resumeData, suspend }) => {
+  execute: async ({ resumeData, suspend }) => {
     const tempPath = "./temp";
     const folders = fs
       .readdirSync(tempPath)
@@ -112,72 +113,50 @@ const selectFolderStep = createStep({
 
     if (!resumeData?.selection) {
       await suspend({
-        folders: folders,
+        folders,
         message: "Please select folders to generate documentation for:",
       });
-      return {
-        selectedFolders: [],
-      };
+      return [];
     }
 
-    const selectedFolders = resumeData.selection.includes("*")
-      ? folders
-      : resumeData.selection;
-
-    return {
-      selectedFolders: selectedFolders,
+    // Gather all file paths from selected folders
+    const filePaths: string[] = [];
+    const readFilesRecursively = (dir: string) => {
+      const items = fs.readdirSync(dir);
+      for (const item of items) {
+        const fullPath = path.join(dir, item);
+        const stat = fs.statSync(fullPath);
+        if (stat.isDirectory()) {
+          readFilesRecursively(fullPath);
+        } else if (stat.isFile()) {
+          filePaths.push(fullPath.replace(tempPath + "/", ""));
+        }
+      }
     };
+
+    for (const folder of resumeData.selection) {
+      readFilesRecursively(path.join(tempPath, folder));
+    }
+
+    return filePaths;
   },
 });
 
 const scrapeCodeStep = createStep({
   id: "scrape_code",
-  description: "Scrape the code from the selected folders",
-  inputSchema: z.object({
-    selectedFolders: z.array(z.string()),
+  description: "Scrape the code from a single file",
+  inputSchema: z.string(),
+  outputSchema: z.object({
+    path: z.string(),
+    content: z.string(),
   }),
-  outputSchema: z.array(
-    z.object({
-      path: z.string(),
-      content: z.string(),
-    }),
-  ),
-  execute: async ({
-    inputData,
-    mastra,
-    getStepResult,
-    getInitData,
-    runtimeContext,
-  }) => {
-    const files: { path: string; content: string }[] = [];
-    const tempPath = "./temp";
-
-    for (const folder of inputData.selectedFolders) {
-      const folderPath = path.join(tempPath, folder);
-
-      const readFilesRecursively = (dir: string) => {
-        const items = fs.readdirSync(dir);
-
-        for (const item of items) {
-          const fullPath = path.join(dir, item);
-          const stat = fs.statSync(fullPath);
-
-          if (stat.isDirectory()) {
-            readFilesRecursively(fullPath);
-          } else if (stat.isFile()) {
-            const content = fs.readFileSync(fullPath, "utf-8");
-            files.push({
-              path: fullPath.replace(tempPath + "/", ""),
-              content: content,
-            });
-          }
-        }
-      };
-
-      readFilesRecursively(folderPath);
-    }
-
-    return files;
+  execute: async ({ inputData }) => {
+    const filePath = inputData;
+    const content = fs.readFileSync(filePath, "utf-8");
+    return {
+      path: filePath,
+      content,
+    };
   },
 });
 
@@ -205,12 +184,10 @@ const generateDocForFileStep = createStep({
 const generateReadmeStep = createStep({
   id: "generate_readme",
   description: "Generate the README.md file",
-  inputSchema: z.array(
-    z.object({
-      path: z.string(),
-      documentation: z.string(),
-    }),
-  ),
+  inputSchema: z.object({
+    path: z.string(),
+    documentation: z.string(),
+  }),
   outputSchema: z.string(),
   execute: async ({
     inputData,
@@ -220,12 +197,36 @@ const generateReadmeStep = createStep({
     runtimeContext,
   }) => {
     const readme = await docGeneratorAgent.generate(
-      `Generate a README.md file for the following documentation: ${inputData.map((doc) => doc.documentation).join("\n")}`,
+      `Generate a README.md file for the following documentation: ${inputData.documentation}`,
     );
 
     return readme.text.toString();
   },
 });
+
+const collateDocumentationStep = createStep({
+    id: "collate_documentation",
+    inputSchema: z.array(z.string()),
+    outputSchema: z.string(),
+    execute: async ({inputData}) => {
+        const readme = await docGeneratorAgent.generate(
+            `Generate a README.md file for the following documentation: ${inputData.map((doc) => doc).join("\n")}`,
+          );
+
+        return readme.text.toString();
+    }
+})
+
+const generateDocsWorkflow = createWorkflow({
+  id: "generate-docs",
+  inputSchema: z.string(),
+  outputSchema: z.string(),
+  steps: [scrapeCodeStep, generateDocForFileStep, generateReadmeStep],
+})
+  .then(scrapeCodeStep)
+  .then(generateDocForFileStep)
+  .then(generateReadmeStep)
+  .commit();
 
 const myWorkflow = createWorkflow({
   id: "docs-generator",
@@ -239,19 +240,12 @@ const myWorkflow = createWorkflow({
       repoUrl: z.string(),
     }),
   }),
-  steps: [
-    cloneRepositoryStep,
-    selectFolderStep,
-    scrapeCodeStep,
-    generateDocForFileStep,
-    generateReadmeStep,
-  ],
+  steps: [cloneRepositoryStep, selectFolderStep, generateDocsWorkflow],
 })
   .then(cloneRepositoryStep)
   .then(selectFolderStep)
-  .then(scrapeCodeStep)
-  .foreach(generateDocForFileStep)
-  .then(generateReadmeStep)
+  .foreach(generateDocsWorkflow)
+  .then(collateDocumentationStep)
   .commit();
 
 const mastra = new Mastra({
@@ -260,28 +254,10 @@ const mastra = new Mastra({
   },
   vnext_workflows: {
     myWorkflow,
+    generateDocsWorkflow,
   },
 });
 
-async function promptUserForFolders(folderList: string[]): Promise<string[]> {
-  folderList.forEach((folder) => console.log(`- ${folder}`));
-  console.log("- * (All folders)");
-
-  const readline = require("readline").createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-
-  return new Promise((resolve) => {
-    readline.question(
-      "Enter folder names separated by comma (or * for all): ",
-      (answer: string) => {
-        readline.close();
-        resolve(answer.split(",").map((f) => f.trim()));
-      }
-    );
-  });
-}
 
 async function runWorkflow() {
   const run = mastra.vnext_getWorkflow("myWorkflow").createRun();
@@ -293,10 +269,13 @@ async function runWorkflow() {
     const suspendedStep = steps["select_folder"];
     let folderList: string[] = [];
 
-    if (suspendedStep.status === "suspended" && "folders" in suspendedStep.payload) {
+    if (
+      suspendedStep.status === "suspended" &&
+      "folders" in suspendedStep.payload
+    ) {
       folderList = suspendedStep.payload.folders as string[];
-    } else if (suspendedStep.status === "success" && suspendedStep.output?.selectedFolders) {
-      folderList = suspendedStep.output.selectedFolders;
+    } else if (suspendedStep.status === "success" && suspendedStep.output) {
+      folderList = suspendedStep.output;
     }
 
     if (!folderList.length) {
@@ -313,7 +292,7 @@ async function runWorkflow() {
 
     // Print resumed result
     if (resumedResult.status === "success") {
-      console.log(resumedResult.result ?? resumedResult);
+      console.log(resumedResult.result);
     } else {
       console.log(resumedResult);
     }
