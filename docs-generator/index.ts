@@ -1,5 +1,5 @@
 import { createWorkflow, createStep } from "@mastra/core/workflows/vNext";
-import { createLogger, Mastra } from "@mastra/core";
+import { Mastra } from "@mastra/core";
 import { Agent } from "@mastra/core/agent";
 import { z } from "zod";
 import simpleGit from "simple-git";
