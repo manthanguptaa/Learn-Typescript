@@ -16,7 +16,7 @@ var __asyncValues = (this && this.__asyncValues) || function (o) {
     function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.weatherWorkflow = void 0;
+exports.activityPlanningWorkflow = void 0;
 const zod_1 = require("zod");
 const vNext_1 = require("@mastra/core/workflows/vNext");
 function getWeatherCondition(code) {
@@ -82,7 +82,7 @@ const fetchWeather = (0, vNext_1.createStep)({
         return forecast;
     }),
 });
-// Plan activities indorrs or outdoors
+// Plan activities indoors or outdoors
 const planActivities = (0, vNext_1.createStep)({
     id: 'plan-activities',
     description: 'Suggests activities based on weather conditions',
@@ -92,7 +92,6 @@ const planActivities = (0, vNext_1.createStep)({
     }),
     execute: (_a) => __awaiter(void 0, [_a], void 0, function* ({ inputData, mastra }) {
         var _b, e_1, _c, _d;
-        console.log('planActivities');
         const forecast = inputData;
         if (!forecast) {
             throw new Error('Forecast data not found');
@@ -142,7 +141,6 @@ const planIndoorActivities = (0, vNext_1.createStep)({
     }),
     execute: (_a) => __awaiter(void 0, [_a], void 0, function* ({ inputData, mastra }) {
         var _b, e_2, _c, _d;
-        console.log('planIndoorActivities');
         const forecast = inputData;
         if (!forecast) {
             throw new Error('Forecast data not found');
@@ -180,8 +178,8 @@ const planIndoorActivities = (0, vNext_1.createStep)({
         };
     }),
 });
-const weatherWorkflow = (0, vNext_1.createWorkflow)({
-    id: 'weather-workflow-step2-if-else',
+const activityPlanningWorkflow = (0, vNext_1.createWorkflow)({
+    id: 'activity-planning-workflow-step2-if-else',
     inputSchema: zod_1.z.object({
         city: zod_1.z.string().describe('The city to get the weather for'),
     }),
@@ -204,5 +202,5 @@ const weatherWorkflow = (0, vNext_1.createWorkflow)({
         planActivities,
     ],
 ]);
-exports.weatherWorkflow = weatherWorkflow;
-weatherWorkflow.commit();
+exports.activityPlanningWorkflow = activityPlanningWorkflow;
+activityPlanningWorkflow.commit();

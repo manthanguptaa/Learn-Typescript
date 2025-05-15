@@ -10,41 +10,21 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const _1 = require("./");
-const prompts_1 = require("@inquirer/prompts");
-const human_in_the_loop_workflow_1 = require("./workflows/human-in-the-loop-workflow");
+const node_server_1 = require("@hono/node-server");
+const server_1 = require("@mastra/deployer/server");
 function main() {
     return __awaiter(this, void 0, void 0, function* () {
-        var _a, _b, _c;
-        const workflow = _1.mastra.vnext_getWorkflow('travelAgentWorkflow');
-        const run = workflow.createRun({});
-        const result = yield run.start({
-            inputData: { vacationDescription: 'I want to go to the beach' },
+        const app = yield (0, server_1.createHonoServer)(_1.mastra);
+        const srv = (0, node_server_1.serve)({
+            fetch: app.fetch,
+            port: 3000,
         });
-        console.log('result', result);
-        const suggStep = (_a = result === null || result === void 0 ? void 0 : result.steps) === null || _a === void 0 ? void 0 : _a['generate-suggestions'];
-        if (suggStep.status === 'success') {
-            const suggestions = (_b = suggStep.output) === null || _b === void 0 ? void 0 : _b.suggestions;
-            const userInput = yield (0, prompts_1.select)({
-                message: "Choose your holiday destination",
-                choices: suggestions.map(({ location, description }) => `- ${location}: ${description}`)
-            });
-            console.log('Selected:', userInput);
-            console.log('resuming from', result, 'with', {
-                inputData: {
-                    selection: userInput,
-                    vacationDescription: 'I want to go to the beach',
-                    suggestions: (_c = suggStep === null || suggStep === void 0 ? void 0 : suggStep.output) === null || _c === void 0 ? void 0 : _c.suggestions,
-                },
-                step: human_in_the_loop_workflow_1.humanInputStep,
-            });
-            const result2 = yield run.resume({
-                resumeData: {
-                    selection: userInput,
-                },
-                step: human_in_the_loop_workflow_1.humanInputStep,
-            });
-            console.dir(result2, { depth: null });
-        }
+        // Example 2
+        const workflow = _1.mastra.vnext_getWorkflow('activityPlanningWorkflow');
+        const run = workflow.createRun({});
+        const result = yield run.start({ inputData: { city: 'New York' } });
+        console.dir(result, { depth: null });
+        srv.close();
     });
 }
 main();
