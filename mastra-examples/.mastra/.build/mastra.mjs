@@ -102,7 +102,7 @@ var DefaultProxyStorage = class extends MastraStorage {
   setupStorage() {
     if (!this.isInitializingPromise) {
       this.isInitializingPromise = new Promise((resolve, reject) => {
-        import('./index2.mjs').then(({ DefaultStorage }) => {
+        import('./index.mjs').then(({ DefaultStorage }) => {
           this.storage = new DefaultStorage({ config: this.storageConfig });
           resolve();
         }).catch(reject);

@@ -8,7 +8,7 @@ import Url from 'url';
 import require$$0$3 from 'punycode';
 import https2 from 'https';
 import zlib from 'zlib';
-import { a as getAugmentedNamespace } from './_commonjsHelpers.mjs';
+import { g as getAugmentedNamespace } from './_commonjsHelpers.mjs';
 
 var inngest = {};
 

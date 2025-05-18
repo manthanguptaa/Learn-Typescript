@@ -1,9 +1,560 @@
 import { RuntimeContext } from './@mastra-core-runtime-context.mjs';
 import { M as MastraBase } from './chunk-235X76GC.mjs';
 import { createHash } from 'crypto';
-import { v as validatorSymbol, s as safeParseJSON, A as AISDKError, b as convertBase64ToUint8Array, n as createIdGenerator, j as InvalidPromptError, o as safeValidateTypes, q as isAbortError, r as getErrorMessage, t as APICallError, u as delay$1, U as UnsupportedFunctionalityError, x as isJSONObject, y as TypeValidationError, z as isJSONArray, g as generateId, B as getErrorMessage$1, e as convertUint8ArrayToBase64, J as JSONParseError, C as convertAsyncIteratorToReadableStream } from './index.mjs';
+import { a as getDefaultExportFromCjs } from './_commonjsHelpers.mjs';
 import { l as lib } from './_virtual__virtual-zod.mjs';
 import { t as trace, S as SpanStatusCode } from './trace-api.mjs';
+
+// src/errors/ai-sdk-error.ts
+var marker$1 = "vercel.ai.error";
+var symbol$1 = Symbol.for(marker$1);
+var _a$1;
+var _AISDKError = class _AISDKError extends Error {
+  /**
+   * Creates an AI SDK Error.
+   *
+   * @param {Object} params - The parameters for creating the error.
+   * @param {string} params.name - The name of the error.
+   * @param {string} params.message - The error message.
+   * @param {unknown} [params.cause] - The underlying cause of the error.
+   */
+  constructor({
+    name: name14,
+    message,
+    cause
+  }) {
+    super(message);
+    this[_a$1] = true;
+    this.name = name14;
+    this.cause = cause;
+  }
+  /**
+   * Checks if the given error is an AI SDK Error.
+   * @param {unknown} error - The error to check.
+   * @returns {boolean} True if the error is an AI SDK Error, false otherwise.
+   */
+  static isInstance(error) {
+    return _AISDKError.hasMarker(error, marker$1);
+  }
+  static hasMarker(error, marker15) {
+    const markerSymbol = Symbol.for(marker15);
+    return error != null && typeof error === "object" && markerSymbol in error && typeof error[markerSymbol] === "boolean" && error[markerSymbol] === true;
+  }
+};
+_a$1 = symbol$1;
+var AISDKError = _AISDKError;
+
+// src/errors/api-call-error.ts
+var name$1 = "AI_APICallError";
+var marker2$1 = `vercel.ai.error.${name$1}`;
+var symbol2$1 = Symbol.for(marker2$1);
+var _a2$1;
+var APICallError = class extends AISDKError {
+  constructor({
+    message,
+    url,
+    requestBodyValues,
+    statusCode,
+    responseHeaders,
+    responseBody,
+    cause,
+    isRetryable = statusCode != null && (statusCode === 408 || // request timeout
+    statusCode === 409 || // conflict
+    statusCode === 429 || // too many requests
+    statusCode >= 500),
+    // server error
+    data
+  }) {
+    super({ name: name$1, message, cause });
+    this[_a2$1] = true;
+    this.url = url;
+    this.requestBodyValues = requestBodyValues;
+    this.statusCode = statusCode;
+    this.responseHeaders = responseHeaders;
+    this.responseBody = responseBody;
+    this.isRetryable = isRetryable;
+    this.data = data;
+  }
+  static isInstance(error) {
+    return AISDKError.hasMarker(error, marker2$1);
+  }
+};
+_a2$1 = symbol2$1;
+
+// src/errors/get-error-message.ts
+function getErrorMessage$1(error) {
+  if (error == null) {
+    return "unknown error";
+  }
+  if (typeof error === "string") {
+    return error;
+  }
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return JSON.stringify(error);
+}
+
+// src/errors/invalid-argument-error.ts
+var name3 = "AI_InvalidArgumentError";
+var marker4$1 = `vercel.ai.error.${name3}`;
+var symbol4$1 = Symbol.for(marker4$1);
+var _a4$1;
+var InvalidArgumentError$1 = class InvalidArgumentError extends AISDKError {
+  constructor({
+    message,
+    cause,
+    argument
+  }) {
+    super({ name: name3, message, cause });
+    this[_a4$1] = true;
+    this.argument = argument;
+  }
+  static isInstance(error) {
+    return AISDKError.hasMarker(error, marker4$1);
+  }
+};
+_a4$1 = symbol4$1;
+
+// src/errors/invalid-prompt-error.ts
+var name4$1 = "AI_InvalidPromptError";
+var marker5$1 = `vercel.ai.error.${name4$1}`;
+var symbol5$1 = Symbol.for(marker5$1);
+var _a5$1;
+var InvalidPromptError = class extends AISDKError {
+  constructor({
+    prompt,
+    message,
+    cause
+  }) {
+    super({ name: name4$1, message: `Invalid prompt: ${message}`, cause });
+    this[_a5$1] = true;
+    this.prompt = prompt;
+  }
+  static isInstance(error) {
+    return AISDKError.hasMarker(error, marker5$1);
+  }
+};
+_a5$1 = symbol5$1;
+
+// src/errors/json-parse-error.ts
+var name6$1 = "AI_JSONParseError";
+var marker7$1 = `vercel.ai.error.${name6$1}`;
+var symbol7$1 = Symbol.for(marker7$1);
+var _a7$1;
+var JSONParseError = class extends AISDKError {
+  constructor({ text, cause }) {
+    super({
+      name: name6$1,
+      message: `JSON parsing failed: Text: ${text}.
+Error message: ${getErrorMessage$1(cause)}`,
+      cause
+    });
+    this[_a7$1] = true;
+    this.text = text;
+  }
+  static isInstance(error) {
+    return AISDKError.hasMarker(error, marker7$1);
+  }
+};
+_a7$1 = symbol7$1;
+
+// src/errors/type-validation-error.ts
+var name12$1 = "AI_TypeValidationError";
+var marker13$1 = `vercel.ai.error.${name12$1}`;
+var symbol13$1 = Symbol.for(marker13$1);
+var _a13$1;
+var _TypeValidationError = class _TypeValidationError extends AISDKError {
+  constructor({ value, cause }) {
+    super({
+      name: name12$1,
+      message: `Type validation failed: Value: ${JSON.stringify(value)}.
+Error message: ${getErrorMessage$1(cause)}`,
+      cause
+    });
+    this[_a13$1] = true;
+    this.value = value;
+  }
+  static isInstance(error) {
+    return AISDKError.hasMarker(error, marker13$1);
+  }
+  /**
+   * Wraps an error into a TypeValidationError.
+   * If the cause is already a TypeValidationError with the same value, it returns the cause.
+   * Otherwise, it creates a new TypeValidationError.
+   *
+   * @param {Object} params - The parameters for wrapping the error.
+   * @param {unknown} params.value - The value that failed validation.
+   * @param {unknown} params.cause - The original error or cause of the validation failure.
+   * @returns {TypeValidationError} A TypeValidationError instance.
+   */
+  static wrap({
+    value,
+    cause
+  }) {
+    return _TypeValidationError.isInstance(cause) && cause.value === value ? cause : new _TypeValidationError({ value, cause });
+  }
+};
+_a13$1 = symbol13$1;
+var TypeValidationError = _TypeValidationError;
+
+// src/errors/unsupported-functionality-error.ts
+var name13$1 = "AI_UnsupportedFunctionalityError";
+var marker14$1 = `vercel.ai.error.${name13$1}`;
+var symbol14$1 = Symbol.for(marker14$1);
+var _a14$1;
+var UnsupportedFunctionalityError = class extends AISDKError {
+  constructor({
+    functionality,
+    message = `'${functionality}' functionality not supported.`
+  }) {
+    super({ name: name13$1, message });
+    this[_a14$1] = true;
+    this.functionality = functionality;
+  }
+  static isInstance(error) {
+    return AISDKError.hasMarker(error, marker14$1);
+  }
+};
+_a14$1 = symbol14$1;
+
+// src/json-value/is-json.ts
+function isJSONValue(value) {
+  if (value === null || typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return true;
+  }
+  if (Array.isArray(value)) {
+    return value.every(isJSONValue);
+  }
+  if (typeof value === "object") {
+    return Object.entries(value).every(
+      ([key, val]) => typeof key === "string" && isJSONValue(val)
+    );
+  }
+  return false;
+}
+function isJSONArray(value) {
+  return Array.isArray(value) && value.every(isJSONValue);
+}
+function isJSONObject(value) {
+  return value != null && typeof value === "object" && Object.entries(value).every(
+    ([key, val]) => typeof key === "string" && isJSONValue(val)
+  );
+}
+
+// This alphabet uses `A-Za-z0-9_-` symbols.
+// The order of characters is optimized for better gzip and brotli compression.
+// References to the same file (works both for gzip and brotli):
+// `'use`, `andom`, and `rict'`
+// References to the brotli default dictionary:
+// `-26T`, `1983`, `40px`, `75px`, `bush`, `jack`, `mind`, `very`, and `wolf`
+let urlAlphabet =
+  'useandom-26T198340PX75pxJACKVERYMINDBUSHWOLF_GQZbfghjklqvwyzrict';
+
+let customAlphabet = (alphabet, defaultSize = 21) => {
+  return (size = defaultSize) => {
+    let id = '';
+    // A compact alternative for `for (var i = 0; i < step; i++)`.
+    let i = size | 0;
+    while (i--) {
+      // `| 0` is more compact and faster than `Math.floor()`.
+      id += alphabet[(Math.random() * alphabet.length) | 0];
+    }
+    return id
+  }
+};
+
+let nanoid = (size = 21) => {
+  let id = '';
+  // A compact alternative for `for (var i = 0; i < step; i++)`.
+  let i = size | 0;
+  while (i--) {
+    // `| 0` is more compact and faster than `Math.floor()`.
+    id += urlAlphabet[(Math.random() * 64) | 0];
+  }
+  return id
+};
+
+var nonSecure = { nanoid, customAlphabet };
+
+var secureJsonParse = {exports: {}};
+
+const hasBuffer = typeof Buffer !== 'undefined';
+const suspectProtoRx = /"(?:_|\\u005[Ff])(?:_|\\u005[Ff])(?:p|\\u0070)(?:r|\\u0072)(?:o|\\u006[Ff])(?:t|\\u0074)(?:o|\\u006[Ff])(?:_|\\u005[Ff])(?:_|\\u005[Ff])"\s*:/;
+const suspectConstructorRx = /"(?:c|\\u0063)(?:o|\\u006[Ff])(?:n|\\u006[Ee])(?:s|\\u0073)(?:t|\\u0074)(?:r|\\u0072)(?:u|\\u0075)(?:c|\\u0063)(?:t|\\u0074)(?:o|\\u006[Ff])(?:r|\\u0072)"\s*:/;
+
+function _parse (text, reviver, options) {
+  // Normalize arguments
+  if (options == null) {
+    if (reviver !== null && typeof reviver === 'object') {
+      options = reviver;
+      reviver = undefined;
+    }
+  }
+
+  if (hasBuffer && Buffer.isBuffer(text)) {
+    text = text.toString();
+  }
+
+  // BOM checker
+  if (text && text.charCodeAt(0) === 0xFEFF) {
+    text = text.slice(1);
+  }
+
+  // Parse normally, allowing exceptions
+  const obj = JSON.parse(text, reviver);
+
+  // Ignore null and non-objects
+  if (obj === null || typeof obj !== 'object') {
+    return obj
+  }
+
+  const protoAction = (options && options.protoAction) || 'error';
+  const constructorAction = (options && options.constructorAction) || 'error';
+
+  // options: 'error' (default) / 'remove' / 'ignore'
+  if (protoAction === 'ignore' && constructorAction === 'ignore') {
+    return obj
+  }
+
+  if (protoAction !== 'ignore' && constructorAction !== 'ignore') {
+    if (suspectProtoRx.test(text) === false && suspectConstructorRx.test(text) === false) {
+      return obj
+    }
+  } else if (protoAction !== 'ignore' && constructorAction === 'ignore') {
+    if (suspectProtoRx.test(text) === false) {
+      return obj
+    }
+  } else {
+    if (suspectConstructorRx.test(text) === false) {
+      return obj
+    }
+  }
+
+  // Scan result for proto keys
+  return filter(obj, { protoAction, constructorAction, safe: options && options.safe })
+}
+
+function filter (obj, { protoAction = 'error', constructorAction = 'error', safe } = {}) {
+  let next = [obj];
+
+  while (next.length) {
+    const nodes = next;
+    next = [];
+
+    for (const node of nodes) {
+      if (protoAction !== 'ignore' && Object.prototype.hasOwnProperty.call(node, '__proto__')) { // Avoid calling node.hasOwnProperty directly
+        if (safe === true) {
+          return null
+        } else if (protoAction === 'error') {
+          throw new SyntaxError('Object contains forbidden prototype property')
+        }
+
+        delete node.__proto__; // eslint-disable-line no-proto
+      }
+
+      if (constructorAction !== 'ignore' &&
+          Object.prototype.hasOwnProperty.call(node, 'constructor') &&
+          Object.prototype.hasOwnProperty.call(node.constructor, 'prototype')) { // Avoid calling node.hasOwnProperty directly
+        if (safe === true) {
+          return null
+        } else if (constructorAction === 'error') {
+          throw new SyntaxError('Object contains forbidden prototype property')
+        }
+
+        delete node.constructor;
+      }
+
+      for (const key in node) {
+        const value = node[key];
+        if (value && typeof value === 'object') {
+          next.push(value);
+        }
+      }
+    }
+  }
+  return obj
+}
+
+function parse (text, reviver, options) {
+  const stackTraceLimit = Error.stackTraceLimit;
+  Error.stackTraceLimit = 0;
+  try {
+    return _parse(text, reviver, options)
+  } finally {
+    Error.stackTraceLimit = stackTraceLimit;
+  }
+}
+
+function safeParse (text, reviver) {
+  const stackTraceLimit = Error.stackTraceLimit;
+  Error.stackTraceLimit = 0;
+  try {
+    return _parse(text, reviver, { safe: true })
+  } catch (_e) {
+    return null
+  } finally {
+    Error.stackTraceLimit = stackTraceLimit;
+  }
+}
+
+secureJsonParse.exports = parse;
+secureJsonParse.exports.default = parse;
+secureJsonParse.exports.parse = parse;
+secureJsonParse.exports.safeParse = safeParse;
+secureJsonParse.exports.scan = filter;
+
+var secureJsonParseExports = secureJsonParse.exports;
+var SecureJSON = /*@__PURE__*/getDefaultExportFromCjs(secureJsonParseExports);
+
+// src/combine-headers.ts
+
+// src/convert-async-iterator-to-readable-stream.ts
+function convertAsyncIteratorToReadableStream(iterator) {
+  return new ReadableStream({
+    /**
+     * Called when the consumer wants to pull more data from the stream.
+     *
+     * @param {ReadableStreamDefaultController<T>} controller - The controller to enqueue data into the stream.
+     * @returns {Promise<void>}
+     */
+    async pull(controller) {
+      try {
+        const { value, done } = await iterator.next();
+        if (done) {
+          controller.close();
+        } else {
+          controller.enqueue(value);
+        }
+      } catch (error) {
+        controller.error(error);
+      }
+    },
+    /**
+     * Called when the consumer cancels the stream.
+     */
+    cancel() {
+    }
+  });
+}
+
+// src/delay.ts
+async function delay$1(delayInMs) {
+  return delayInMs == null ? Promise.resolve() : new Promise((resolve2) => setTimeout(resolve2, delayInMs));
+}
+var createIdGenerator = ({
+  prefix,
+  size: defaultSize = 16,
+  alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+  separator = "-"
+} = {}) => {
+  const generator = nonSecure.customAlphabet(alphabet, defaultSize);
+  if (prefix == null) {
+    return generator;
+  }
+  if (alphabet.includes(separator)) {
+    throw new InvalidArgumentError$1({
+      argument: "separator",
+      message: `The separator "${separator}" must not be part of the alphabet "${alphabet}".`
+    });
+  }
+  return (size) => `${prefix}${separator}${generator(size)}`;
+};
+var generateId = createIdGenerator();
+
+// src/get-error-message.ts
+function getErrorMessage(error) {
+  if (error == null) {
+    return "unknown error";
+  }
+  if (typeof error === "string") {
+    return error;
+  }
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return JSON.stringify(error);
+}
+
+// src/is-abort-error.ts
+function isAbortError(error) {
+  return error instanceof Error && (error.name === "AbortError" || error.name === "TimeoutError");
+}
+
+// src/validator.ts
+var validatorSymbol = Symbol.for("vercel.ai.validator");
+function validator(validate) {
+  return { [validatorSymbol]: true, validate };
+}
+function isValidator(value) {
+  return typeof value === "object" && value !== null && validatorSymbol in value && value[validatorSymbol] === true && "validate" in value;
+}
+function asValidator(value) {
+  return isValidator(value) ? value : zodValidator(value);
+}
+function zodValidator(zodSchema) {
+  return validator((value) => {
+    const result = zodSchema.safeParse(value);
+    return result.success ? { success: true, value: result.data } : { success: false, error: result.error };
+  });
+}
+function safeValidateTypes({
+  value,
+  schema
+}) {
+  const validator2 = asValidator(schema);
+  try {
+    if (validator2.validate == null) {
+      return { success: true, value };
+    }
+    const result = validator2.validate(value);
+    if (result.success) {
+      return result;
+    }
+    return {
+      success: false,
+      error: TypeValidationError.wrap({ value, cause: result.error })
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: TypeValidationError.wrap({ value, cause: error })
+    };
+  }
+}
+function safeParseJSON({
+  text,
+  schema
+}) {
+  try {
+    const value = SecureJSON.parse(text);
+    if (schema == null) {
+      return { success: true, value, rawValue: value };
+    }
+    const validationResult = safeValidateTypes({ value, schema });
+    return validationResult.success ? { ...validationResult, rawValue: value } : validationResult;
+  } catch (error) {
+    return {
+      success: false,
+      error: JSONParseError.isInstance(error) ? error : new JSONParseError({ text, cause: error })
+    };
+  }
+}
+
+// src/uint8-utils.ts
+var { btoa, atob } = globalThis;
+function convertBase64ToUint8Array(base64String) {
+  const base64Url = base64String.replace(/-/g, "+").replace(/_/g, "/");
+  const latin1string = atob(base64Url);
+  return Uint8Array.from(latin1string, (byte) => byte.codePointAt(0));
+}
+function convertUint8ArrayToBase64(array) {
+  let latin1string = "";
+  for (let i = 0; i < array.length; i++) {
+    latin1string += String.fromCodePoint(array[i]);
+  }
+  return btoa(latin1string);
+}
 
 const ignoreOverride = Symbol("Let zodToJsonSchema decide on which parser to use");
 const defaultOptions = {

@@ -27,4 +27,4 @@ function getAugmentedNamespace(n) {
 	return a;
 }
 
-export { getAugmentedNamespace as a, getDefaultExportFromCjs as g };
+export { getDefaultExportFromCjs as a, getAugmentedNamespace as g };
