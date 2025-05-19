@@ -121373,6 +121373,7 @@ var realtimeMiddleware = dist.realtimeMiddleware;
 
 const inngest = new Inngest({
   id: "mastra",
+  baseUrl: `https://api.inngest.com`,
   middleware: [realtimeMiddleware()]
 });
 const mastra = new Mastra({

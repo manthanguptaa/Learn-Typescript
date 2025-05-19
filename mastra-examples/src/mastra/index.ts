@@ -9,6 +9,7 @@ import { VercelDeployer } from "@mastra/deployer-vercel";
 
 const inngest = new Inngest({
   id: 'mastra',
+  baseUrl: `https://api.inngest.com`,
   middleware: [realtimeMiddleware()],
 })
 
