@@ -121337,13 +121337,17 @@ var InngestExecutionEngine = class extends DefaultExecutionEngine {
 
 var Inngest = inngest$1.Inngest;
 
+var realtimeMiddleware = dist.realtimeMiddleware;
+
 var ZodFirstPartyTypeKind = lib.ZodFirstPartyTypeKind;
 var ZodOptional = lib.ZodOptional;
 var z = lib.z;
 
 const { createWorkflow, createStep } = init(
   new Inngest({
-    id: "mastra"
+    id: "mastra",
+    baseUrl: "https://api.inngest.com",
+    middleware: [realtimeMiddleware()]
   })
 );
 const incrementStep = createStep({
@@ -121355,7 +121359,32 @@ const incrementStep = createStep({
     value: z.number()
   }),
   execute: async ({ inputData }) => {
-    return { value: 2 };
+    return { value: inputData.value + 1 };
+  }
+});
+const sideEffectStep = createStep({
+  id: "side-effect",
+  inputSchema: z.object({
+    value: z.number()
+  }),
+  outputSchema: z.object({
+    value: z.number()
+  }),
+  execute: async ({ inputData }) => {
+    console.log("Current value:", inputData.value);
+    return { value: inputData.value };
+  }
+});
+const finalStep = createStep({
+  id: "final",
+  inputSchema: z.object({
+    value: z.number()
+  }),
+  outputSchema: z.object({
+    value: z.number()
+  }),
+  execute: async ({ inputData }) => {
+    return { value: inputData.value };
   }
 });
 const workflow = createWorkflow({
@@ -121366,14 +121395,24 @@ const workflow = createWorkflow({
   outputSchema: z.object({
     value: z.number()
   })
-}).then(incrementStep);
+}).dountil(
+  createWorkflow({
+    id: "increment-subworkflow",
+    inputSchema: z.object({
+      value: z.number()
+    }),
+    outputSchema: z.object({
+      value: z.number()
+    }),
+    steps: [incrementStep, sideEffectStep]
+  }).then(incrementStep).then(sideEffectStep).commit(),
+  async ({ inputData }) => inputData.value >= 10
+).then(finalStep);
 workflow.commit();
-
-var realtimeMiddleware = dist.realtimeMiddleware;
 
 const inngest = new Inngest({
   id: "mastra",
-  baseUrl: `https://api.inngest.com`,
+  baseUrl: "https://api.inngest.com",
   middleware: [realtimeMiddleware()]
 });
 const mastra = new Mastra({

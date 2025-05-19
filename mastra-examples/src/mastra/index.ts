@@ -4,12 +4,12 @@ import { createLogger } from '@mastra/core/logger'
 import { Inngest } from 'inngest'
 import { incrementWorkflow } from './workflows'
 import { realtimeMiddleware } from '@inngest/realtime'
-import { VercelDeployer } from "@mastra/deployer-vercel";
+import { VercelDeployer } from '@mastra/deployer-vercel'
 
 
 const inngest = new Inngest({
   id: 'mastra',
-  baseUrl: `https://api.inngest.com`,
+  baseUrl: 'https://api.inngest.com',
   middleware: [realtimeMiddleware()],
 })
 
@@ -38,4 +38,3 @@ export const mastra = new Mastra({
     token: "gtBT8E7RxQ8ZMNHSjKZ1etLK",
   }),
 })
-
