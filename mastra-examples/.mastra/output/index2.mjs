@@ -1,4 +1,4 @@
-import { E as MastraStorage, F as TABLE_WORKFLOW_SNAPSHOT, G as TABLE_THREADS, J as TABLE_MESSAGES, D as TABLE_EVALS, K as TABLE_TRACES } from './mastra.mjs';
+import { w as MastraStorage, x as TABLE_WORKFLOW_SNAPSHOT, y as TABLE_THREADS, B as TABLE_MESSAGES, v as TABLE_EVALS, C as TABLE_TRACES } from './mastra.mjs';
 import { isAbsolute, join, resolve } from 'node:path';
 import { createClient } from '@libsql/client';
 import 'crypto';
@@ -15,14 +15,6 @@ import 'zlib';
 import 'pino';
 import 'pino-pretty';
 import 'events';
-import 'http2';
-import 'fs/promises';
-import 'path/posix';
-import 'fs';
-import 'node:stream';
-import 'node:util';
-import 'node:buffer';
-import 'node:stream/web';
 
 function safelyParseJSON(jsonString) {
   try {

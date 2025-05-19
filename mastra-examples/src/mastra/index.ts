@@ -4,8 +4,6 @@ import { createLogger } from '@mastra/core/logger'
 import { Inngest } from 'inngest'
 import { incrementWorkflow } from './workflows'
 import { realtimeMiddleware } from '@inngest/realtime'
-import { serve } from '@hono/node-server'
-import { createHonoServer } from '@mastra/deployer/server'
 import { VercelDeployer } from "@mastra/deployer-vercel";
 
 
@@ -41,21 +39,12 @@ export const mastra = new Mastra({
 })
 
 async function main() {
-  const app = await createHonoServer(mastra)
-
-  const srv = serve({
-      fetch: app.fetch,
-      port: 3000,
-  })
   
   // Get the workflow, create a run, and start it with an initial value
   const workflow = mastra.vnext_getWorkflow('incrementWorkflow')
   const run = workflow.createRun({})
   const result = await run.start({ inputData: { value: 5 } })
   console.dir(result, { depth: null })
-  
-  // Close the server when done
-  srv.close()
 }
 
 main()
