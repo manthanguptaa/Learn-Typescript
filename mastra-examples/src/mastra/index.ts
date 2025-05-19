@@ -39,13 +39,3 @@ export const mastra = new Mastra({
   }),
 })
 
-async function main() {
-  
-  // Get the workflow, create a run, and start it with an initial value
-  const workflow = mastra.vnext_getWorkflow('incrementWorkflow')
-  const run = workflow.createRun({})
-  const result = await run.start({ inputData: { value: 5 } })
-  console.dir(result, { depth: null })
-}
-
-main()

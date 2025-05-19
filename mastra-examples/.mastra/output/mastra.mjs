@@ -121398,18 +121398,5 @@ const mastra = new Mastra({
     level: "info"
   })
 });
-async function main() {
-  const workflow = mastra.vnext_getWorkflow("incrementWorkflow");
-  const run = workflow.createRun({});
-  const result = await run.start({
-    inputData: {
-      value: 5
-    }
-  });
-  console.dir(result, {
-    depth: null
-  });
-}
-main();
 
 export { AvailableHooks as A, TABLE_MESSAGES as B, TABLE_TRACES as C, InstrumentClass as I, MastraBase as M, RegisteredLogger as R, Telemetry as T, ZodFirstPartyTypeKind as Z, __decoratorStart as _, ZodOptional as a, RuntimeContext as b, ensureAllMessagesAreCoreMessages as c, createMastraProxy as d, ensureToolProperties as e, executeHook as f, __decorateElement as g, __runInitializers as h, generateText as i, generateObject as j, streamObject as k, lib as l, makeCoreTool as m, delay as n, output_exports as o, jsonSchema as p, isVercelTool as q, registerHook as r, streamText as s, mastra as t, checkEvalStorageFields as u, TABLE_EVALS as v, MastraStorage as w, TABLE_WORKFLOW_SNAPSHOT as x, TABLE_THREADS as y, z };
