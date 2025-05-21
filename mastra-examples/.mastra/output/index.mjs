@@ -15047,6 +15047,5 @@ const app = await createHonoServer(mastra);
 
 const GET = handle(app);
 const POST = handle(app);
-const PUT = handle(app);
 
-export { GET, POST, PUT };
+export { GET, POST };

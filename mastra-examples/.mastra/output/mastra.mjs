@@ -121339,17 +121339,17 @@ var Inngest = inngest$1.Inngest;
 
 var realtimeMiddleware = dist.realtimeMiddleware;
 
+const inngest = new Inngest({
+  id: "mastra",
+  baseUrl: "https://api.inngest.com" ,
+  middleware: [realtimeMiddleware()]
+});
+
 var ZodFirstPartyTypeKind = lib.ZodFirstPartyTypeKind;
 var ZodOptional = lib.ZodOptional;
 var z = lib.z;
 
-const { createWorkflow, createStep } = init(
-  new Inngest({
-    id: "mastra",
-    baseUrl: "https://api.inngest.com",
-    middleware: [realtimeMiddleware()]
-  })
-);
+const { createWorkflow, createStep } = init(inngest);
 const incrementStep = createStep({
   id: "increment",
   inputSchema: z.object({
@@ -121410,11 +121410,6 @@ const workflow = createWorkflow({
 ).then(finalStep);
 workflow.commit();
 
-const inngest = new Inngest({
-  id: "mastra",
-  baseUrl: "https://api.inngest.com",
-  middleware: [realtimeMiddleware()]
-});
 const mastra = new Mastra({
   vnext_workflows: {
     incrementWorkflow: workflow

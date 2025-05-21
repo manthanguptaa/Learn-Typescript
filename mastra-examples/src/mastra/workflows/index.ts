@@ -1,15 +1,8 @@
 import { init } from '@mastra/inngest'
-import { Inngest } from 'inngest'
-import { realtimeMiddleware } from '@inngest/realtime'
+import { inngest } from '../inngest'
 
 // Initialize Inngest with Mastra, pointing to your local Inngest server
-const { createWorkflow, createStep } = init(
-  new Inngest({
-    id: 'mastra',
-    baseUrl: 'https://api.inngest.com',
-    middleware: [realtimeMiddleware()],
-  })
-)
+const { createWorkflow, createStep } = init(inngest)
 
 import { z } from 'zod'
 

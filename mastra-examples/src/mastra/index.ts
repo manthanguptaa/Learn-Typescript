@@ -1,17 +1,9 @@
 import { Mastra } from '@mastra/core/mastra'
 import { serve as inngestServe } from '@mastra/inngest'
 import { createLogger } from '@mastra/core/logger'
-import { Inngest } from 'inngest'
 import { incrementWorkflow } from './workflows'
-import { realtimeMiddleware } from '@inngest/realtime'
 import { VercelDeployer } from '@mastra/deployer-vercel'
-
-
-const inngest = new Inngest({
-  id: 'mastra',
-  baseUrl: 'https://api.inngest.com',
-  middleware: [realtimeMiddleware()],
-})
+import { inngest } from './inngest'
 
 
 export const mastra = new Mastra({
